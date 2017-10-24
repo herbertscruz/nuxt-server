@@ -17,29 +17,32 @@ NuxtServer.prototype.run = function () {
       process.exit(1);
   }
 
-  let httpPort = process.env.HTTP_PORT || 8080;
-  let httpsPort = process.env.HTTPS_PORT || 8443;
+  let httpPort = process.env.HTTP_PORT;
+  let httpsPort = process.env.HTTPS_PORT;
   let pathKey = process.env.PATH_KEY;
   let pathCert = process.env.PATH_CERT;
 
   if (cert.setup) {
       if (cert.setup.http) {
           if (cert.setup.http.port) {
-              httpPort = cert.setup.http.port;
+              httpPort = cert.setup.http.port || 8080;
           }
       }
       if (cert.setup.https) {
           if (cert.setup.https.port) {
-              httpPort = cert.setup.https.port;
+              httpsPort = cert.setup.https.port || 8443;
           }
       }
       if (cert.setup.https) {
           if (cert.setup.https.path) {
               pathKey = cert.setup.https.path.key;
-              pathCert = cert.setup.https.path.key;
+              pathCert = cert.setup.https.path.cert;
           }
       }
   }
+
+  httpPort = httpPort || 8080;
+  httpsPort = httpsPort || 8443;
 
   // Create a new Nuxt instance
   const nuxt = new this._nuxt(this._config);
@@ -68,7 +71,7 @@ NuxtServer.prototype.run = function () {
 
   // Creating https services on express
   if (certMode === 'https' || certMode === 'http_https') {
-    if (!pathKey || pathCert) {
+    if (!pathKey || !pathCert) {
       console.error('ERROR: Set key and cert file paths.');
       process.exit(1);
     }
