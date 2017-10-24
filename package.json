@@ -1,0 +1,27 @@
+{
+  "name": "nuxt-server",
+  "version": "1.0.0",
+  "description": "HTTP and HTTPS server for nuxt",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/herbertscruz/nuxt-server.git"
+  },
+  "keywords": [
+    "nuxt",
+    "http",
+    "https",
+    "server",
+    "deploy",
+    "deployment"
+  ],
+  "author": "Herberts Cruz <herbertscruz@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/herbertscruz/nuxt-server/issues"
+  },
+  "homepage": "https://github.com/herbertscruz/nuxt-server#readme"
+}
