@@ -23,5 +23,9 @@
   "bugs": {
     "url": "https://github.com/herbertscruz/nuxt-server/issues"
   },
-  "homepage": "https://github.com/herbertscruz/nuxt-server#readme"
+  "homepage": "https://github.com/herbertscruz/nuxt-server#readme",
+  "dependencies": {
+    "chalk": "^2.3.0",
+    "lodash": "^4.17.4"
+  }
 }

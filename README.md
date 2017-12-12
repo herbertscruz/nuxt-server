@@ -14,13 +14,30 @@ cert: {
     },
     https: {
       port: 8443,// default
-        path: {
+      path: {
         key: './path/to/file/example.key', // Path to the certificate key
-        cert: './path/to/file/example.crt' // Path to the certificate
-      }
+        cert: './path/to/file/example.crt', // Path to the certificate
+        ca: ['./path/to/file/example.txt'] // Path to the certificate
+      },
+      handshakeTimeout: 120,
+      requestCert: false,
+      rejectUnauthorized: true
     }
   }
 }
+```
+OU 
+
+```sh
+export CERT_MODE=http
+export HTTP_PORT=8080
+export HTTPS_PORT=8443
+export PATH_KEY=./path/to/file/example.key
+export PATH_CERT=./path/to/file/example.crt
+export PATH_CA=./path/to/file/example.txt
+export HANDSHAKE_TIMEOUT=120
+export REQUEST_CERT=false
+export REJECT_UNAUTHORIZED=true
 ```
 
 ### server.js
@@ -33,7 +50,20 @@ const NuxtServer = require('nuxt-server');
 const config = require('../nuxt.config.js');
 
 const server = new NuxtServer(Nuxt, Builder, config);
-server.run();
+// ---
+server.run(function(err, ports) {
+  if (err) console.error(err);
+  console.log(ports);
+});
+// OR
+var psRun = server.run();
+psRun.then(function(ports) {
+  console.log(ports);
+});
+psRun.catch(function(err) {
+  console.error(err);
+});
+// ---
 ```
 
 ### package.json
