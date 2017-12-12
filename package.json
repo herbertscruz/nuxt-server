@@ -25,7 +25,6 @@
   },
   "homepage": "https://github.com/herbertscruz/nuxt-server#readme",
   "dependencies": {
-    "chalk": "^2.3.0",
     "lodash": "^4.17.4"
   }
 }

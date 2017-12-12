@@ -2,7 +2,6 @@ var fs = require('fs');
 var http = require('http');
 var https = require('https');
 var _ = require('lodash');
-var chalk = require('chalk');
 
 function NuxtServer(Nuxt, Builder, nuxtConfig) {
     this._nuxt = Nuxt;
