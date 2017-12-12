@@ -50,7 +50,20 @@ const NuxtServer = require('nuxt-server');
 const config = require('../nuxt.config.js');
 
 const server = new NuxtServer(Nuxt, Builder, config);
-server.run();
+// ---
+server.run(function(err, ports) {
+  if (err) console.error(err);
+  console.log(ports);
+});
+// OR
+var psRun = server.run();
+psRun.then(function(ports) {
+  console.log(ports);
+});
+psRun.catch(function(err) {
+  console.error(err);
+});
+// ---
 ```
 
 ### package.json

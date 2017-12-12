@@ -1,6 +1,6 @@
 {
   "name": "nuxt-server",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "HTTP and HTTPS server for nuxt",
   "main": "index.js",
   "scripts": {
@@ -25,6 +25,7 @@
   },
   "homepage": "https://github.com/herbertscruz/nuxt-server#readme",
   "dependencies": {
+    "chalk": "^2.3.0",
     "lodash": "^4.17.4"
   }
 }
