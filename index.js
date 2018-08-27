@@ -1,143 +1,173 @@
-var fs = require('fs');
-var http = require('http');
-var https = require('https');
-var _ = require('lodash');
+const fs = require('fs');
+const http = require('http');
+const https = require('https');
+const consola = require('consola')
+const _ = require('lodash');
 
-function NuxtServer(Nuxt, Builder, nuxtConfig) {
-    this._nuxt = Nuxt;
-    this._builder = Builder;
-    this._config = _.merge(nuxtConfig, {
-        cert: {
-            mode: 'http',
-            setup: {
-                http: {
-                    port: 8080
-                },
-                https: {
-                    port: 8443,
-                    path: {
-                        key: null,
-                        cert: null,
-                        ca: []
+const logger = consola.withScope('nuxt-server')
+
+module.exports = class NuxtServer {
+    constructor(Nuxt, Builder, nuxtConfig) {
+        this._nuxt = Nuxt;
+        this._builder = Builder;
+        this._config = _.merge(nuxtConfig, {
+            cert: {
+                mode: 'http',
+                setup: {
+                    http: {
+                        port: 8080
                     },
-                    handshakeTimeout: 120,
-                    requestCert: false,
-                    rejectUnauthorized: true,
+                    https: {
+                        port: 8443,
+                        path: {
+                            key: null,
+                            cert: null,
+                            ca: []
+                        },
+                        handshakeTimeout: 120,
+                        requestCert: false,
+                        rejectUnauthorized: true,
+                    }
                 }
             }
-        }
-    });
-}
+        });
 
-NuxtServer.prototype.run = function (callback) {
-    var self = this;
-    function result(cb) {
+        this._nuxt = new Nuxt(this._config);
+    }
+
+    addServerMiddleware(m) {
+        // Resolve
+        const $m = m
+        if (typeof m === 'string') {
+            m = require(m)
+        }
+
+        if (typeof m.handler === 'string') {
+            m.handler = require(m.handler)
+        }
+
+        const handler = m.handler || m
+        const path = (
+            (m.prefix ? m.prefix : '') +
+            (typeof m.path === 'string' ? m.path : '')
+        ).replace(/\/\//g, '/')
+
+        handler.$m = $m
+
+        // Use middleware
+        if (_.isArray(handler)) {
+            handler.forEach((h) => {
+                this._nuxt.render.use(path, h)
+                logger.info('Added middleware to ' + path);
+            });
+        } else {
+            this._nuxt.render.use(path, handler)
+            logger.info('Added middleware to ' + path);
+        }
+    }
+
+    async _runnable() {
         try {
-            var certMode = (process.env.CERT_MODE || self._config.cert.mode).toLowerCase();
-            var httpPort = process.env.HTTP_PORT || self._config.cert.setup.http.port;
-            var httpsPort = process.env.HTTPS_PORT || self._config.cert.setup.https.port;
-            var pathKey = process.env.PATH_KEY || self._config.cert.setup.https.path.key;
-            var pathCert = process.env.PATH_CERT || self._config.cert.setup.https.path.cert;
-            var pathCa = _.compact(_.uniq(_.concat([process.env.PATH_CA] || self._config.cert.setup.https.path.ca)));
-            var handshakeTimeout = self._config.cert.setup.https.handshakeTimeout;
+            const certMode = (process.env.CERT_MODE || this._config.cert.mode).toLowerCase();
+            const httpPort = process.env.HTTP_PORT || this._config.cert.setup.http.port;
+            const httpsPort = process.env.HTTPS_PORT || this._config.cert.setup.https.port;
+            const pathKey = process.env.PATH_KEY || this._config.cert.setup.https.path.key;
+            const pathCert = process.env.PATH_CERT || this._config.cert.setup.https.path.cert;
+            const pathCa = _.compact(_.uniq(_.concat([process.env.PATH_CA] || this._config.cert.setup.https.path.ca)));
+            const handshakeTimeout = this._config.cert.setup.https.handshakeTimeout;
+            const nuxt = this._nuxt;
+
             if (!_.isUndefined(process.env.HANDSHAKE_TIMEOUT)) {
                 handshakeTimeout = parseInt(process.env.HANDSHAKE_TIMEOUT);
             }
-            var requestCert = self._config.cert.setup.https.requestCert;
+
+            let requestCert = this._config.cert.setup.https.requestCert;
             if (!_.isUndefined(process.env.REQUEST_CERT)) {
                 requestCert = (process.env.REQUEST_CERT === 'true');
             }
-            var rejectUnauthorized = self._config.cert.setup.https.rejectUnauthorized;
+
+            let rejectUnauthorized = this._config.cert.setup.https.rejectUnauthorized;
             if (!_.isUndefined(process.env.REJECT_UNAUTHORIZED)) {
                 rejectUnauthorized = (process.env.REJECT_UNAUTHORIZED === 'true');
             }
 
-            //TRACE
-            console.log('-- TRACE --');
-            console.log('CERT_MODE', certMode);
-            console.log('HTTP_PORT', httpPort);
-            console.log('HTTPS_PORT', httpsPort);
-            console.log('PATH_KEY', pathKey);
-            console.log('PATH_CERT', pathCert);
-            console.log('PATH_CA', pathCa);
-            console.log('HANDSHAKE_TIMEOUT', handshakeTimeout);
-            console.log('REQUEST_CERT', requestCert);
-            console.log('REQUEST_CERT', requestCert);
-            console.log('REJECT_UNAUTHORIZED', rejectUnauthorized);
-            console.log('-- TRACE --');
+            logger.info('CERT_MODE: ' + certMode);
+            logger.info('HTTP_PORT: ' + httpPort);
+            logger.info('HTTPS_PORT: ' + httpsPort);
+            logger.info('PATH_KEY: ' + pathKey);
+            logger.info('PATH_CERT: ' + pathCert);
+            logger.info('PATH_CA: ' + pathCa);
+            logger.info('HANDSHAKE_TIMEOUT: ' + handshakeTimeout);
+            logger.info('REQUEST_CERT: ' + requestCert);
+            logger.info('REQUEST_CERT: ' + requestCert);
+            logger.info('REJECT_UNAUTHORIZED: ' + rejectUnauthorized);
 
             if (!['http', 'https', 'http_https'].includes(certMode)) {
-                return cb(new Error('Cert mode only supports HTTP, HTTPS and HTTP_HTTPS.'));
+                this.error('Cert mode only supports HTTP, HTTPS and HTTP_HTTPS.')
             }
+
             if (certMode === 'http_https') {
                 if (httpPort === httpsPort) {
-                    return cb(new Error('HTTP and HTTPS ports must be different.'));
+                    this.error('HTTP and HTTPS ports must be different.');
                 }
             }
             if (certMode === 'https' || certMode === 'http_https') {
                 if (!pathKey || !pathCert) {
-                    return cb(new Error('ERROR: Set key and cert file paths.'));
+                    this.error('ERROR: Set key and cert file paths.');
                 }
             }
 
-            var promises = [];
-            // Create a new Nuxt instance
-            var nuxt = new self._nuxt(self._config);
             // Enable live build & reloading on dev
             if (nuxt.options.dev) {
-                var build = new self._builder(nuxt).build();
-                promises.push(build);
+                const server = new this._builder(nuxt);
+                await server.build();
             }
 
-            var psPromiseAll = Promise.all(promises);
-            psPromiseAll.then(function() {
-                try {
-                    var ports = [];
-                    // Creating http services on express
-                    if (certMode === 'http' || certMode === 'http_https') {
-                        var httpServer = http.createServer(nuxt.render);
-                        httpServer.listen(httpPort);
-                        ports.push(httpPort);
+            let ports = [];
+            // Creating http services on express
+            if (certMode === 'http' || certMode === 'http_https') {
+                http.createServer(nuxt.render).listen(httpPort);
+                ports.push(httpPort);
+            }
+
+            // Creating https services on express
+            if (certMode === 'https' || certMode === 'http_https') {
+                // HTTPS Server settings
+                const privateKey  = fs.readFileSync(pathKey, 'utf8');
+                const certificate = fs.readFileSync(pathCert, 'utf8');
+                const ca = _.compact(_.map(pathCa, item => {
+                    if (item) {
+                        return fs.readFileSync(item, 'utf8');
                     }
-                    // Creating https services on express
-                    if (certMode === 'https' || certMode === 'http_https') {
-                        // HTTPS Server settings
-                        var privateKey  = fs.readFileSync(pathKey, 'utf8');
-                        var certificate = fs.readFileSync(pathCert, 'utf8');
-                        var ca = _.compact(_.map(pathCa, function(item) {
-                            if (item) {
-                                return fs.readFileSync(item, 'utf8');
-                            }
-                        }));
-                        var options = {
-                            key: privateKey,
-                            cert: certificate,
-                            ca: ca,
-                            handshakeTimeout: handshakeTimeout,
-                            requestCert: requestCert,
-                            rejectUnauthorized: rejectUnauthorized,
-                        };
-                        var httpsServer = https.createServer(options, nuxt.render);
-                        httpsServer.listen(httpsPort);
-                        ports.push(httpsPort);
-                    }
-                    cb(null, ports);
-                } catch (err) {
-                    cb(err);
-                }
-            });
-            psPromiseAll.catch(cb);
+                }));
+                const options = {
+                    key: privateKey,
+                    cert: certificate,
+                    ca: ca,
+                    handshakeTimeout: handshakeTimeout,
+                    requestCert: requestCert,
+                    rejectUnauthorized: rejectUnauthorized,
+                };
+                https.createServer(options, nuxt.render).listen(httpsPort);
+                ports.push(httpsPort);
+            }
+
+            logger.success('Server listening on ' + ports.join('|'));
         } catch (err) {
-            return cb(err);
+            this.error(err);
         }
     }
-    if (callback) return result(callback);
-    return new Promise(function(resolve, reject) {
-        result(function(err, data) {
-            if (err) return reject(err);
-            resolve(data);
-        });
-    });
-};
 
-module.exports = NuxtServer;
+    run(callback) {
+        if (!callback) return this._runnable();
+        
+        const result = this._runnable();
+        result.then(data => callback(null, data));
+        result.catch(callback);
+    }
+
+    error(e) {
+        logger.error(e)
+        throw new Error(e);
+    }
+}

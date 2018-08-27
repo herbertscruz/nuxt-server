@@ -25,6 +25,7 @@
   },
   "homepage": "https://github.com/herbertscruz/nuxt-server#readme",
   "dependencies": {
+    "consola": "^1.4.3",
     "lodash": "^4.17.4"
   }
 }
