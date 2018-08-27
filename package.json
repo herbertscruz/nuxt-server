@@ -1,6 +1,6 @@
 {
   "name": "nuxt-server",
-  "version": "1.1",
+  "version": "1.1.0",
   "description": "HTTP and HTTPS server for nuxt",
   "main": "index.js",
   "scripts": {
