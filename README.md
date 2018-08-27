@@ -56,7 +56,7 @@ server.run(function(err, ports) {
   console.log(ports);
 });
 // OR
-var psRun = server.run();
+const psRun = server.run();
 psRun.then(function(ports) {
   console.log(ports);
 });
