@@ -66,7 +66,7 @@ module.exports = class NuxtServer {
         }
     }
 
-    async run() {
+    async _runnable() {
         try {
             const certMode = (process.env.CERT_MODE || this._config.cert.mode).toLowerCase();
             const httpPort = process.env.HTTP_PORT || this._config.cert.setup.http.port;
@@ -135,7 +135,7 @@ module.exports = class NuxtServer {
                 // HTTPS Server settings
                 const privateKey  = fs.readFileSync(pathKey, 'utf8');
                 const certificate = fs.readFileSync(pathCert, 'utf8');
-                const ca = _.compact(_.map(pathCa, function(item) {
+                const ca = _.compact(_.map(pathCa, item => {
                     if (item) {
                         return fs.readFileSync(item, 'utf8');
                     }
@@ -156,6 +156,14 @@ module.exports = class NuxtServer {
         } catch (err) {
             this.error(err);
         }
+    }
+
+    run(callback) {
+        if (!callback) return this._runnable();
+        
+        const result = this._runnable();
+        result.then(data => callback(null, data));
+        result.catch(callback);
     }
 
     error(e) {
