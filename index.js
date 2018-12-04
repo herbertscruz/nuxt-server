@@ -74,9 +74,9 @@ module.exports = class NuxtServer {
             const pathKey = process.env.PATH_KEY || this._config.cert.setup.https.path.key;
             const pathCert = process.env.PATH_CERT || this._config.cert.setup.https.path.cert;
             const pathCa = _.compact(_.uniq(_.concat([process.env.PATH_CA] || this._config.cert.setup.https.path.ca)));
-            const handshakeTimeout = this._config.cert.setup.https.handshakeTimeout;
             const nuxt = this._nuxt;
 
+            let handshakeTimeout = this._config.cert.setup.https.handshakeTimeout;
             if (!_.isUndefined(process.env.HANDSHAKE_TIMEOUT)) {
                 handshakeTimeout = parseInt(process.env.HANDSHAKE_TIMEOUT);
             }
@@ -98,7 +98,6 @@ module.exports = class NuxtServer {
             logger.info('PATH_CERT: ' + pathCert);
             logger.info('PATH_CA: ' + pathCa);
             logger.info('HANDSHAKE_TIMEOUT: ' + handshakeTimeout);
-            logger.info('REQUEST_CERT: ' + requestCert);
             logger.info('REQUEST_CERT: ' + requestCert);
             logger.info('REJECT_UNAUTHORIZED: ' + rejectUnauthorized);
 
